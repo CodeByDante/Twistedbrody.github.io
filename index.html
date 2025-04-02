@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Sitio de Videos</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Buscar por nombre..." autocomplete="off">
+    </div>
+
+    <div class="categories">
+        <button data-category="all" class="active">Todos</button>
+        <button data-category="tutoriales">Tutoriales</button>
+        <button data-category="documentales">Documentales</button>
+        <button data-category="noticias">Noticias</button>
+        <button data-category="deportes">Deportes</button>
+    </div>
+
+    <div class="container" id="videoContainer">
+        <!-- Mensaje inicial -->
+        <div class="loading-message">Cargando videos...</div>
+    </div>
+
+    <!-- Modal para añadir videos -->
+    <div id="addVideoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Añadir nuevo video</h2>
+            <form id="videoForm">
+                <select id="videoType" required>
+                    <option value="">Tipo de video</option>
+                    <option value="local">Video Local (MP4)</option>
+                    <option value="vimeo">Vimeo</option>
+                    <option value="youtube">YouTube</option>
+                </select>
+                
+                <div id="localVideoField" class="video-field">
+                    <input type="text" id="videoUrl" placeholder="Ruta (ej: videos/video6.mp4)" required>
+                </div>
+                
+                <div id="embedVideoField" class="video-field" style="display:none;">
+                    <input type="text" id="embedCode" placeholder="ID del video (ej: 1067624786)" required>
+                </div>
+                
+                <input type="text" id="videoTitle" placeholder="Título del video" required>
+                <select id="videoCategory" required>
+                    <option value="">Selecciona categoría</option>
+                    <option value="tutoriales">Tutoriales</option>
+                    <option value="documentales">Documentales</option>
+                    <option value="noticias">Noticias</option>
+                    <option value="deportes">Deportes</option>
+                </select>
+                <button type="submit">Guardar Video</button>
+            </form>
+        </div>
+    </div>
+
+    <button id="addVideoBtn" class="floating-btn">+</button>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
