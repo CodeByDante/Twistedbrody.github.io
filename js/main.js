@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const localVideoField = document.getElementById('localVideoField');
     const embedVideoField = document.getElementById('embedVideoField');
     
-    // Cargar videos al iniciar
-    loadVideos();
+    // Cargar videos al iniciar (en modo aleatorio)
+    loadVideos(true); // <<-- Modo aleatorio activado
     
     // Eventos del modal
     addVideoBtn.addEventListener('click', () => modal.style.display = 'block');
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Funciones principales
-    function loadVideos() {
+    function loadVideos(randomMode = false) {
         let videos = JSON.parse(localStorage.getItem('videos'));
         
         if (!videos || videos.length === 0) {
@@ -83,11 +83,11 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('videos', JSON.stringify(videos));
         }
         
-        renderVideos(videos);
+        renderVideos(videos, randomMode); // <<-- Pasamos el modo aleatorio
         setupSearch();
     }
     
-    function renderVideos(videos) {
+    function renderVideos(videos, randomMode = false) {
         videoContainer.innerHTML = '';
         
         if (videos.length === 0) {
@@ -95,14 +95,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        videos.forEach(video => {
+        // Selección aleatoria (1 video) o todos los videos
+        const videosToShow = randomMode 
+            ? [videos[Math.floor(Math.random() * videos.length)]] 
+            : videos;
+        
+        videosToShow.forEach(video => {
             const videoCard = document.createElement('div');
             videoCard.className = 'video-card';
             videoCard.setAttribute('data-category', video.category);
             
             if (video.type === 'local') {
                 videoCard.innerHTML = `
-                    <video src="${video.url}" controls></video>
+                    <video src="${video.url}" controls autoplay muted></video>
                     <p class="video-title">${video.title}</p>
                 `;
             } else {
