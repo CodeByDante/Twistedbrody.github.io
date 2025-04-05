@@ -1,34 +1,28 @@
 # Twistedbrody.github.io
+# 📂 Estructura del Proyecto - TwsitedBrody
 
-html
- ├── head
- │   ├── meta (charset, viewport)
- │   ├── link (favicon)
- │   └── title (Vite + React + TS)
- └── body
-     └── div#root
-         └── App
-             ├── div.search-bar
-             │   ├── input[type="text"] (buscador)
-             │   └── button (ícono de búsqueda)
-             ├── select (categoría)
-             ├── select (hashtags)
-             ├── button (agregar video)
-             ├── div.video-list
-             │   ├── div.video-card
-             │   │   ├── iframe (video)
-             │   │   ├── h3 (título)
-             │   │   ├── p (descripción)
-             │   │   ├── span (categoría)
-             │   │   └── div.hashtags
-             │   │       └── span (hashtags)
-             │   └── ... (más tarjetas de video)
-             └── div.modal (solo si está visible)
-                 └── form
-                     ├── input (título)
-                     ├── textarea (descripción)
-                     ├── input (URL del video)
-                     ├── input (categoría)
-                     ├── input (hashtags)
-                     ├── button (guardar)
-                     └── button (cancelar/cerrar)
+Este documento describe la estructura de archivos y carpetas del proyecto.
+
+## 📁 Estructura de directorios
+
+```plaintext
+twsitedbrody_extracted/
+└── project/
+    ├── .bolt/                  # Configuración interna
+    │   ├── config.json
+    │   ├── prompt
+    ├── src/                     # Código fuente principal
+    │   ├── App.tsx              # Componente principal
+    │   ├── main.tsx             # Punto de entrada de React
+    │   ├── index.css            # Estilos globales
+    │   ├── vite-env.d.ts        # Tipos de Vite
+    ├── .gitignore               # Archivos ignorados por Git
+    ├── index.html               # Punto de entrada HTML
+    ├── package.json             # Dependencias y scripts de npm
+    ├── package-lock.json        # Registro de versiones de dependencias
+    ├── postcss.config.js        # Configuración de PostCSS
+    ├── tailwind.config.js       # Configuración de Tailwind CSS
+    ├── tsconfig.json            # Configuración principal de TypeScript
+    ├── tsconfig.app.json        # Configuración específica para la app
+    ├── tsconfig.node.json       # Configuración para Node.js
+    ├── vite.config.ts           # Configuración de Vite
