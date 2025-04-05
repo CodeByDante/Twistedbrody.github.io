@@ -26,9 +26,11 @@ twsitedbrody_extracted/
     ├── tsconfig.app.json        # Configuración específica para la app
     ├── tsconfig.node.json       # Configuración para Node.js
     ├── vite.config.ts           # Configuración de Vite
+```
+```
+npm install
 
 ```
-cd ruta/donde/esta/twsitedbrody_extracted/project
 ```
-
+npm run dev
 
