@@ -1,281 +1,328 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, Video } from 'lucide-react';
+import { Search, PlusCircle, Github, X, Edit2, Trash2 } from 'lucide-react';
 
-interface VideoItem {
+interface Video {
   id: string;
   title: string;
-  description: string;
-  url: string;
   category: string;
-  hashtags: string[];
+  url: string;
+  description?: string;
+  tags?: string[];
 }
 
 function App() {
-  const [videos, setVideos] = useState<VideoItem[]>(() => {
-    const saved = localStorage.getItem('videos');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('todos');
-  const [selectedHashtag, setSelectedHashtag] = useState('');
-  const [newVideo, setNewVideo] = useState({
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingVideo, setEditingVideo] = useState<Video | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [formData, setFormData] = useState({
     title: '',
-    description: '',
-    url: '',
     category: '',
-    newCategory: '',
-    hashtags: '',
+    url: '',
+    description: '',
+    tags: '',
+    newCategory: ''
   });
-
-  const categories = ['todos', ...new Set(videos.map(video => video.category))];
-  const allHashtags = Array.from(new Set(videos.flatMap(video => video.hashtags || [])));
 
   useEffect(() => {
-    localStorage.setItem('videos', JSON.stringify(videos));
+    const savedVideos = localStorage.getItem('videos');
+    if (savedVideos) {
+      setVideos(JSON.parse(savedVideos));
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const uniqueCategories = Array.from(new Set(videos.map(video => video.category)));
+    setCategories(uniqueCategories);
   }, [videos]);
 
-  const extractHashtags = (text: string): string[] => {
-    const hashtagRegex = /#[\wáéíóúñÁÉÍÓÚÑ]+/g;
-    return (text.match(hashtagRegex) || []).map(tag => tag.slice(1));
+  const saveVideos = (newVideos: Video[]) => {
+    localStorage.setItem('videos', JSON.stringify(newVideos));
+    setVideos(newVideos);
   };
 
-  const getEmbedUrl = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      
-      // YouTube
-      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
-        const videoId = urlObj.hostname.includes('youtu.be') 
-          ? urlObj.pathname.slice(1)
-          : urlObj.searchParams.get('v');
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-      
-      // Vimeo
-      if (urlObj.hostname.includes('vimeo.com')) {
-        const videoId = urlObj.pathname.split('/').pop();
-        return `https://player.vimeo.com/video/${videoId}`;
-      }
-      
-      // Google Drive
-      if (urlObj.hostname.includes('drive.google.com')) {
-        const fileId = url.match(/[-\w]{25,}/);
-        if (fileId) {
-          return `https://drive.google.com/file/d/${fileId[0]}/preview`;
-        }
-      }
-      
-      return url;
-    } catch (error) {
-      console.error('Error al procesar la URL:', error);
-      return url;
-    }
-  };
-
-  const handleAddVideo = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const category = newVideo.newCategory || newVideo.category;
-    const hashtags = extractHashtags(newVideo.description + ' ' + newVideo.hashtags);
     
-    const videoItem: VideoItem = {
-      id: Date.now().toString(),
-      title: newVideo.title,
-      description: newVideo.description,
-      url: getEmbedUrl(newVideo.url),
+    const category = formData.newCategory || formData.category;
+    const tags = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.startsWith('#'));
+    
+    const videoData = {
+      id: editingVideo?.id || Date.now().toString(),
+      title: formData.title,
       category,
-      hashtags,
+      url: formData.url,
+      description: formData.description,
+      tags
     };
-    
-    setVideos([...videos, videoItem]);
-    setNewVideo({ title: '', description: '', url: '', category: '', newCategory: '', hashtags: '' });
+
+    if (editingVideo) {
+      const updatedVideos = videos.map(v => v.id === editingVideo.id ? videoData : v);
+      saveVideos(updatedVideos);
+    } else {
+      saveVideos([...videos, videoData]);
+    }
+
+    setFormData({
+      title: '',
+      category: '',
+      url: '',
+      description: '',
+      tags: '',
+      newCategory: ''
+    });
     setIsModalOpen(false);
+    setEditingVideo(null);
   };
 
-  const filteredVideos = videos.filter(video => {
-    const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         video.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'todos' || video.category === selectedCategory;
-    const matchesHashtag = !selectedHashtag || (video.hashtags && video.hashtags.includes(selectedHashtag));
-    return matchesSearch && matchesCategory && matchesHashtag;
-  });
+  const handleEdit = (video: Video) => {
+    setEditingVideo(video);
+    setFormData({
+      title: video.title,
+      category: video.category,
+      url: video.url,
+      description: video.description || '',
+      tags: (video.tags || []).join(', '),
+      newCategory: ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (videoId: string) => {
+    const updatedVideos = videos.filter(v => v.id !== videoId);
+    saveVideos(updatedVideos);
+  };
+
+  const filteredVideos = videos
+    .filter(video => 
+      video.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (!selectedCategory || video.category === selectedCategory)
+    )
+    .sort(() => Math.random() - 0.5);
 
   return (
-    <div className="min-h-screen bg-[#121212] text-[#e0e0e0]">
-      {/* Header */}
-      <header className="bg-[#1e1e1e] py-6 px-4 shadow-lg">
-        <div className="container mx-auto flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-[#bb86fc] flex items-center gap-2">
-            <Video className="w-8 h-8" />
-            TwistedBrody
-          </h1>
-        </div>
+    <div className="min-h-screen bg-[#121212] text-white">
+      <header className="bg-[#1e1e1e] py-6 px-4 shadow-lg transition-all duration-300 ease-in-out">
+        <h1 className="text-4xl font-bold text-center text-[#bb86fc] animate-fade-in">TwistedBrody</h1>
       </header>
 
-      {/* Search and Filter Section */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-center mb-8">
-          <div className="relative flex-1 max-w-2xl">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#a0a0a0]" />
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex flex-wrap gap-4 mb-8 animate-slide-in">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors duration-200" />
             <input
               type="text"
               placeholder="Buscar videos..."
-              className="w-full bg-[#1e1e1e] text-[#e0e0e0] pl-10 pr-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc] focus:ring-1 focus:ring-[#bb86fc]"
+              className="w-full pl-10 pr-4 py-2 bg-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          
           <select
-            className="bg-[#1e1e1e] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc]"
+            className="bg-[#1e1e1e] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
+            <option value="">Todas las categorías</option>
             {categories.map(category => (
-              <option key={category} value={category}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </option>
+              <option key={category} value={category}>{category}</option>
             ))}
           </select>
-          {allHashtags.length > 0 && (
-            <select
-              className="bg-[#1e1e1e] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc]"
-              value={selectedHashtag}
-              onChange={(e) => setSelectedHashtag(e.target.value)}
-            >
-              <option value="">Todos los hashtags</option>
-              {allHashtags.map(hashtag => (
-                <option key={hashtag} value={hashtag}>#{hashtag}</option>
-              ))}
-            </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            <div className="col-span-full text-center py-12 text-gray-400">
+              Cargando videos...
+            </div>
+          ) : filteredVideos.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-400 animate-fade-in">
+              No se encontraron videos
+            </div>
+          ) : (
+            filteredVideos.map((video, index) => (
+              <div
+                key={video.id}
+                className="video-card bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="relative aspect-video">
+                  <iframe
+                    src={video.url}
+                    className="absolute w-full h-full"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  />
+                </div>
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-xl font-semibold">{video.title}</h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(video)}
+                        className="text-[#bb86fc] hover:text-[#bb86fc]/80 transition-colors duration-200"
+                      >
+                        <Edit2 size={20} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(video.id)}
+                        className="text-red-500 hover:text-red-400 transition-colors duration-200"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-2">{video.category}</p>
+                  {video.description && (
+                    <p className="text-sm text-gray-300 mb-2">{video.description}</p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {video.tags?.map(tag => (
+                      <span
+                        key={tag}
+                        className="text-sm text-[#bb86fc] hover:text-[#bb86fc]/80 transition-colors duration-200"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
 
-        {/* Video Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVideos.map(video => (
-            <div key={video.id} className="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-lg transform transition-transform hover:scale-[1.02]">
-              <div className="aspect-video">
-                <iframe
-                  src={video.url}
-                  className="w-full h-full"
-                  allowFullScreen
-                  title={video.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                ></iframe>
-              </div>
-              <div className="p-4">
-                <h3 className="text-xl font-semibold mb-2">{video.title}</h3>
-                <p className="text-[#a0a0a0] mb-2">{video.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-block bg-[#bb86fc] text-[#121212] px-3 py-1 rounded-full text-sm">
-                    {video.category}
-                  </span>
-                  {video.hashtags && Array.isArray(video.hashtags) && video.hashtags.map(hashtag => (
-                    <span
-                      key={hashtag}
-                      className="inline-block bg-[#1e1e1e] text-[#bb86fc] border border-[#bb86fc] px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-[#bb86fc] hover:text-[#121212] transition-colors"
-                      onClick={() => setSelectedHashtag(hashtag)}
-                    >
-                      #{hashtag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="fixed bottom-8 right-8 bg-[#bb86fc] text-black p-4 rounded-full shadow-lg hover:bg-[#bb86fc]/80 transition-all duration-300 hover:scale-110 hover:shadow-xl"
+        >
+          <PlusCircle size={24} />
+        </button>
 
-      {/* Add Video Button */}
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-8 right-8 bg-[#bb86fc] hover:bg-[#9e5ffd] text-[#121212] p-4 rounded-full shadow-lg transition-colors"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 modal-overlay">
+            <div className="bg-[#1e1e1e] rounded-lg p-6 w-full max-w-md modal-content">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">
+                  {editingVideo ? 'Editar Video' : 'Agregar Video'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingVideo(null);
+                    setFormData({
+                      title: '',
+                      category: '',
+                      url: '',
+                      description: '',
+                      tags: '',
+                      newCategory: ''
+                    });
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                >
+                  <X size={24} />
+                </button>
+              </div>
 
-      {/* Add Video Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-[#1e1e1e] rounded-lg p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-[#bb86fc]">Agregar Nuevo Video</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-[#a0a0a0] hover:text-[#e0e0e0]">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <form onSubmit={handleAddVideo}>
-              <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Título</label>
                   <input
                     type="text"
                     required
-                    className="w-full bg-[#121212] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc]"
-                    value={newVideo.title}
-                    onChange={(e) => setNewVideo({...newVideo, title: e.target.value})}
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    className="w-full bg-[#121212] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Descripción</label>
-                  <textarea
-                    required
-                    className="w-full bg-[#121212] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc]"
-                    value={newVideo.description}
-                    onChange={(e) => setNewVideo({...newVideo, description: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">URL del Video</label>
-                  <input
-                    type="url"
-                    required
-                    className="w-full bg-[#121212] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc]"
-                    value={newVideo.url}
-                    onChange={(e) => setNewVideo({...newVideo, url: e.target.value})}
-                  />
-                </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Categoría</label>
                   <select
-                    className="w-full bg-[#121212] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc] mb-2"
-                    value={newVideo.category}
-                    onChange={(e) => setNewVideo({...newVideo, category: e.target.value})}
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    className="w-full bg-[#121212] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200 mb-2"
                   >
                     <option value="">Seleccionar categoría</option>
-                    {categories.filter(cat => cat !== 'todos').map(category => (
+                    {categories.map(category => (
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
                   <input
                     type="text"
-                    placeholder="O agregar nueva categoría"
-                    className="w-full bg-[#121212] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc]"
-                    value={newVideo.newCategory}
-                    onChange={(e) => setNewVideo({...newVideo, newCategory: e.target.value})}
+                    placeholder="O ingresa una nueva categoría"
+                    value={formData.newCategory}
+                    onChange={(e) => setFormData({...formData, newCategory: e.target.value})}
+                    className="w-full bg-[#121212] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">Hashtags</label>
+                  <label className="block text-sm font-medium mb-1">URL del video</label>
+                  <input
+                    type="url"
+                    required
+                    value={formData.url}
+                    onChange={(e) => setFormData({...formData, url: e.target.value})}
+                    className="w-full bg-[#121212] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descripción (opcional)</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full bg-[#121212] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tags (separados por comas, deben comenzar con #)</label>
                   <input
                     type="text"
-                    placeholder="Agregar hashtags (ej: #música #rock)"
-                    className="w-full bg-[#121212] text-[#e0e0e0] px-4 py-2 rounded-lg border border-[#333] focus:outline-none focus:border-[#bb86fc]"
-                    value={newVideo.hashtags}
-                    onChange={(e) => setNewVideo({...newVideo, hashtags: e.target.value})}
+                    placeholder="#ejemplo, #video"
+                    value={formData.tags}
+                    onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                    className="w-full bg-[#121212] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
                   />
                 </div>
+
                 <button
                   type="submit"
-                  className="w-full bg-[#bb86fc] hover:bg-[#9e5ffd] text-[#121212] py-2 rounded-lg font-medium transition-colors"
+                  className="w-full bg-[#bb86fc] text-black py-2 rounded-lg font-medium hover:bg-[#bb86fc]/80 transition-all duration-300 hover:scale-105"
                 >
-                  Agregar Video
+                  {editingVideo ? 'Guardar Cambios' : 'Agregar Video'}
                 </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
+        )}
+      </main>
+
+      <footer className="bg-[#1e1e1e] py-6 px-4 mt-12">
+        <div className="container mx-auto text-center">
+          <p className="text-gray-400">
+            Creado con ❤️ por{' '}
+            <a
+              href="https://github.com/CodeByDante/Twistedbrody.github.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#bb86fc] hover:text-[#bb86fc]/80 transition-colors duration-200 inline-flex items-center gap-1"
+            >
+              CodeByDante <Github size={16} />
+            </a>
+          </p>
         </div>
-      )}
+      </footer>
     </div>
   );
 }
