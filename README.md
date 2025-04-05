@@ -27,6 +27,8 @@ twsitedbrody_extracted/
     ├── tsconfig.node.json       # Configuración para Node.js
     ├── vite.config.ts           # Configuración de Vite
 ```
+> [!IMPORTANT]
+> Instalar Node.js es esencial para gestionar dependencias, ejecutar el servidor local. Sin él, no podrás ejecutarla web correctamente.
 ```
 cd ruta/donde/esta/twsitedbrody_extracted/project
 ```
