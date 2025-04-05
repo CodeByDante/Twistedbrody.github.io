@@ -1,75 +1,13 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galería de Videos</title>
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-    <!-- Barra de búsqueda y botón GitHub -->
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Buscar videos..." autocomplete="off">
-        <a href="https://github.com/CodeByDante/Twistedbrody.github.io" class="github-btn" target="_blank">GitHub</a>
-    </div>
-
-    <!-- Filtros por categoría -->
-    <div class="categories">
-        <button data-category="all" class="active">Todos</button>
-        <button data-category="tutoriales">Tutoriales</button>
-        <button data-category="japs8005">Japs8005</button>
-        <button data-category="documentales">Documentales</button>
-        <button data-category="musica">Música</button>
-        <button data-category="educacion">Educación</button>
-    </div>
-
-    <!-- Contenedor de videos -->
-    <div class="video-container" id="videoContainer">
-        <div class="no-results">No hay videos disponibles. ¡Añade uno!</div>
-    </div>
-
-    <!-- Modal para agregar videos -->
-    <div id="addVideoModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Añadir nuevo video</h2>
-            <form id="videoForm">
-                <select id="videoType" required>
-                    <option value="">Selecciona tipo</option>
-                    <option value="vimeo">Vimeo</option>
-                    <option value="youtube">YouTube</option>
-                    <option value="google-drive">Google Drive</option>
-                    <option value="other">Otro</option>
-                </select>
-                <input type="text" id="videoUrl" placeholder="URL completa del video" required>
-                <input type="text" id="videoTitle" placeholder="Título del video" required>
-                <select id="videoCategory" required>
-                    <option value="">Selecciona categoría</option>
-                    <option value="tutoriales">Tutoriales</option>
-                    <option value="japs8005">Japs8005</option>
-                    <option value="documentales">Documentales</option>
-                    <option value="musica">Música</option>
-                    <option value="educacion">Educación</option>
-                </select>
-                <input type="text" id="videoHashtag" placeholder="#opcional (ej: programacion)">
-                <button type="submit">Guardar Video</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para mostrar código -->
-    <div id="codeModal" class="modal">
-        <div class="modal-content">
-            <span class="close-code">&times;</span>
-            <h2>Código para copiar</h2>
-            <textarea id="generatedCode" rows="10" readonly></textarea>
-            <button id="copyCodeBtn">Copiar al portapapeles</button>
-        </div>
-    </div>
-
-    <!-- Botón flotante para añadir videos -->
-    <button id="addVideoBtn" class="floating-btn">+</button>
-
-    <script src="js/main.js"></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
