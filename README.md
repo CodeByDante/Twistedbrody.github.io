@@ -29,13 +29,13 @@ twsitedbrody_extracted/
 ```
 > [!IMPORTANT]
 > Instalar Node.js es esencial para gestionar dependencias, ejecutar el servidor local. Sin él, no podrás ejecutarla web correctamente.
-```
+```bash
 cd ruta/donde/esta/twsitedbrody_extracted/project
 ```
-```
+```bash
 npm install
 ```
-```
+```bash
 npm run dev
 ```
 > [!NOTE]
