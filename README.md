@@ -28,9 +28,18 @@ twsitedbrody_extracted/
     ├── vite.config.ts           # Configuración de Vite
 ```
 ```
+cd ruta/donde/esta/twsitedbrody_extracted/project
+```
+```
 npm install
-
 ```
 ```
 npm run dev
+```
+> [!NOTE]
+> Abre el enlace en tu navegador y listo, ya debería funcionar.
+```
+Local: http://localhost:5173/
+```
+
 
