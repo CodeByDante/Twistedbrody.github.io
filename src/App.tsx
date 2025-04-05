@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, PlusCircle, Github, X, Edit2, Trash2 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+// Inicializar el cliente de Supabase
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL || '',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+);
 
 interface Video {
   id: string;
@@ -8,6 +15,7 @@ interface Video {
   url: string;
   description?: string;
   tags?: string[];
+  created_at?: string;
 }
 
 function App() {
@@ -28,12 +36,40 @@ function App() {
     newCategory: ''
   });
 
-  useEffect(() => {
-    const savedVideos = localStorage.getItem('videos');
-    if (savedVideos) {
-      setVideos(JSON.parse(savedVideos));
+  // Función para procesar la URL del video
+  const processVideoUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      
+      // YouTube
+      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        const videoId = urlObj.searchParams.get('v') || urlObj.pathname.slice(1);
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+      
+      // Vimeo
+      if (urlObj.hostname.includes('vimeo.com')) {
+        const videoId = urlObj.pathname.split('/').pop();
+        return `https://player.vimeo.com/video/${videoId}`;
+      }
+      
+      // Google Drive
+      if (urlObj.hostname.includes('drive.google.com')) {
+        const id = url.match(/[-\w]{25,}/);
+        if (id) {
+          return `https://drive.google.com/file/d/${id[0]}/preview`;
+        }
+      }
+
+      // Si no coincide con ningún formato conocido, devolver la URL original
+      return url;
+    } catch (e) {
+      return url;
     }
-    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchVideos();
   }, []);
 
   useEffect(() => {
@@ -41,43 +77,68 @@ function App() {
     setCategories(uniqueCategories);
   }, [videos]);
 
-  const saveVideos = (newVideos: Video[]) => {
-    localStorage.setItem('videos', JSON.stringify(newVideos));
-    setVideos(newVideos);
+  const fetchVideos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setVideos(data || []);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      setIsLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const category = formData.newCategory || formData.category;
     const tags = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.startsWith('#'));
+    const processedUrl = processVideoUrl(formData.url);
     
     const videoData = {
       id: editingVideo?.id || Date.now().toString(),
       title: formData.title,
       category,
-      url: formData.url,
+      url: processedUrl,
       description: formData.description,
       tags
     };
 
-    if (editingVideo) {
-      const updatedVideos = videos.map(v => v.id === editingVideo.id ? videoData : v);
-      saveVideos(updatedVideos);
-    } else {
-      saveVideos([...videos, videoData]);
-    }
+    try {
+      if (editingVideo) {
+        const { error } = await supabase
+          .from('videos')
+          .update(videoData)
+          .eq('id', editingVideo.id);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('videos')
+          .insert([videoData]);
+        
+        if (error) throw error;
+      }
 
-    setFormData({
-      title: '',
-      category: '',
-      url: '',
-      description: '',
-      tags: '',
-      newCategory: ''
-    });
-    setIsModalOpen(false);
-    setEditingVideo(null);
+      fetchVideos();
+      setFormData({
+        title: '',
+        category: '',
+        url: '',
+        description: '',
+        tags: '',
+        newCategory: ''
+      });
+      setIsModalOpen(false);
+      setEditingVideo(null);
+    } catch (error) {
+      console.error('Error saving video:', error);
+    }
   };
 
   const handleEdit = (video: Video) => {
@@ -93,9 +154,18 @@ function App() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (videoId: string) => {
-    const updatedVideos = videos.filter(v => v.id !== videoId);
-    saveVideos(updatedVideos);
+  const handleDelete = async (videoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', videoId);
+
+      if (error) throw error;
+      fetchVideos();
+    } catch (error) {
+      console.error('Error deleting video:', error);
+    }
   };
 
   const filteredVideos = videos
@@ -273,6 +343,9 @@ function App() {
                     onChange={(e) => setFormData({...formData, url: e.target.value})}
                     className="w-full bg-[#121212] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#bb86fc] transition-all duration-200"
                   />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Soporta: YouTube, Vimeo, Google Drive
+                  </p>
                 </div>
 
                 <div>
